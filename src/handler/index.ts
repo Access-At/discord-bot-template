@@ -1,9 +1,9 @@
 import { readdirSync } from "fs";
 import path, { join } from "path";
-import type { CustomClient, Events } from "@/util/type";
 import logger from "@/util/logger";
 import { REST, Routes } from "discord.js";
 import { table, getBorderCharacters } from "table";
+import type { CustomClient, EventContext, Events } from "@/util/type";
 
 export default class Handlers {
   private client: CustomClient;
@@ -33,15 +33,27 @@ export default class Handlers {
         const event: Events = require(join(eventsPath, folder, file)).event;
         if (event.rest) {
           if (event.once) {
-            this.client.once(event.name, (...args) => event.execute({ message: args[0], interaction: args[0], client: this.client }));
+            this.client.once(event.name, (...args: any[]) => {
+              const context = this.createEventContext(...args);
+              event.execute(this.client, context);
+            });
           } else {
-            this.client.on(event.name, (...args) => event.execute({ message: args[0], interaction: args[0], client: this.client }));
+            this.client.on(event.name, (...args: any[]) => {
+              const context = this.createEventContext(...args);
+              event.execute(this.client, context);
+            });
           }
         } else {
-          if (event.once) this.client.once(event.name, (args) => event.execute({ message: args[0], interaction: args[0], client: this.client }));
-          else {
-            // this.client.distube.on(event.name, (args) => event.execute({ message: args[0], interaction: args[0], client: this.client }));
-            this.client.on(event.name, (...args) => event.execute({ message: args[0], interaction: args[0], client: this.client }));
+          if (event.once) {
+            this.client.once(event.name, (...args: any[]) => {
+              const context = this.createEventContext(...args);
+              event.execute(this.client, context);
+            });
+          } else {
+            this.client.on(event.name, (...args: any[]) => {
+              const context = this.createEventContext(...args);
+              event.execute(this.client, context);
+            });
           }
         }
 
@@ -89,5 +101,15 @@ export default class Handlers {
     } catch (error) {
       logger.error(error);
     }
+  }
+
+  // Helper method to map args to a structured context
+  private createEventContext(...args: any[]): EventContext {
+    // This is where you map the args array to specific properties like message, interaction, etc.
+    // Assuming args[0] is the message and args[1] is the interaction (adapt as needed):
+    return {
+      message: args[0], // Map based on your use case
+      interaction: args[0], // Map based on your use case
+    };
   }
 }

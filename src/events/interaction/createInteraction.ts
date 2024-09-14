@@ -3,38 +3,26 @@ import { GuildMemberRoleManager } from "discord.js";
 
 export const event: Events = {
   name: "interactionCreate",
-  execute: async ({ interaction, client }) => {
-    if (interaction.isAutocomplete()) {
-      const command = client.commands.get(interaction.commandName);
-      if (!command?.autocomplete) return;
-      command?.autocomplete({ interaction, client });
-    }
+  execute: async (client, c) => {
+    if (!c.interaction || !c.interaction.isChatInputCommand()) return;
 
-    if (!interaction.isChatInputCommand()) return;
+    const command = client.commands.get(c.interaction.commandName);
 
-    const command = client.commands.get(interaction.commandName);
-    if (!command) {
-      await interaction.reply({ content: "An error has occurred", ephemeral: true });
-      return;
-    }
-
-    if ("execute" in command && typeof command.execute === "function") {
-      await command.execute(interaction, client);
-    } else {
-      await interaction.reply({ content: "Command execution not implemented", ephemeral: true });
-    }
-
-    if (interaction.commandId === "verify") {
-      const role = interaction.guild?.roles.cache.get(client.config.roles.verificationId);
-      if (role && interaction.member && interaction.member.roles instanceof GuildMemberRoleManager) {
-        await interaction.member.roles.add(role);
-        await interaction.reply({ content: `${role.name} has been assigned to you.`, ephemeral: true });
+    if (c.interaction.isChatInputCommand()) {
+      if (!command) {
+        await c.interaction.reply({ content: "outdated command" });
         return;
       }
-    } else if (interaction.isStringSelectMenu()) {
-      // Handle string select menu interactions
-    } else if (interaction.isButton()) {
-      // Handle button interactions
+
+      await command.execute(c.interaction, client);
+    }
+
+    if (c.interaction.commandName === "verify") {
+      const role = c.interaction.guild?.roles.cache.get(client.config.roles.verificationId);
+      if (role && c.interaction.member && c.interaction.member.roles instanceof GuildMemberRoleManager) {
+        await c.interaction.member.roles.add(role);
+        await c.interaction.reply({ content: `${role.name} has been assigned to you.`, ephemeral: true });
+      }
     }
   },
 };

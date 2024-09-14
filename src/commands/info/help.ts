@@ -1,33 +1,86 @@
-import type { Commands, CustomCommandInteraction, CustomClient } from "@/util/type";
-import { SlashCommandBuilder } from "@discordjs/builders";
+import type { Commands } from "@/util/type";
+
+import { ComponentType, EmbedBuilder, SlashCommandBuilder, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuInteraction } from "discord.js";
 
 export const command: Commands = {
-  data: new SlashCommandBuilder().setName("help").setDescription("Displays information about available commands"),
-
-  async execute({ interaction, client }) {
-    if (!client.application?.commands) {
-      await interaction.reply("Unable to fetch commands at this time.");
-      return;
-    }
-
-    const commands = await client.application.commands.fetch();
-    const commandList = commands.map((cmd) => `**/${cmd.name}**: ${cmd.description}`).join("\n");
-
-    const helpEmbed = {
-      color: 0x0099ff,
-      title: "Available Commands",
-      description: "Here are all the available commands:",
-      fields: [
-        {
-          name: "Commands",
-          value: commandList || "No commands available.",
-        },
-      ],
-      footer: {
-        text: "Use /command for more information on a specific command.",
-      },
+  data: new SlashCommandBuilder().setName("help").setDescription("Get a list of all the commands from the discord bot."),
+  async execute(interaction, client): Promise<void> {
+    const emojis: { [key: string]: string } = {
+      info: "📄",
+      moderation: "🛠",
+      general: "⚙",
+      ticket: "🎟",
     };
 
-    await interaction.reply({ embeds: [helpEmbed], ephemeral: true });
+    const directories: string[] = [...new Set(interaction.client.commands.map((command) => command.folder))];
+
+    const formatString = (str: string): string => `${str[0].toUpperCase()}${str.slice(1).toLowerCase()}`;
+
+    const categories: { directory: string; command: { name: string; description: string }[] }[] = directories.map((directory: string) => {
+      const getCommands = interaction.client.commands
+        .filter((command) => command.folder === directory)
+        .map((command) => ({
+          name: command.data.name,
+          description: command.data.description || "There is no description for this command.",
+        }));
+
+      return {
+        directory: formatString(directory),
+        command: getCommands,
+      };
+    });
+
+    const embed: EmbedBuilder = new EmbedBuilder().setDescription("Please choose a category in the dropdown menu");
+
+    const components = (state: boolean) => [
+      new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+        new StringSelectMenuBuilder()
+          .setCustomId("help-menu")
+          .setPlaceholder("Please select a category")
+          .setDisabled(state)
+          .setOptions(
+            categories.map((category) => ({
+              label: category.directory,
+              value: category.directory.toLowerCase(),
+              description: `Commands from ${category.directory} category.`,
+              emoji: emojis[category.directory.toLowerCase()] || undefined,
+            }))
+          )
+      ),
+    ];
+
+    const initialMessage = await interaction.reply({
+      embeds: [embed],
+      components: components(false),
+      fetchReply: true,
+    });
+
+    const filter = (i: StringSelectMenuInteraction) => i.user.id === interaction.user.id;
+
+    const collector = initialMessage.createMessageComponentCollector({
+      filter,
+      componentType: ComponentType.StringSelect,
+      time: 60000, // Collector time (60 seconds)
+    });
+
+    collector?.on("collect", async (i) => {
+      const [directory] = i.values;
+      const category = categories.find((x) => x.directory.toLowerCase() === directory);
+      const categoryEmbed: EmbedBuilder = new EmbedBuilder()
+        .setTitle(`${formatString(directory)} commands`)
+        .setDescription(`A list of all the commands categorized under ${directory}`)
+        .addFields(
+          category?.command.map((command) => ({
+            name: `\`${command.name}\``,
+            value: command.description,
+            inline: true,
+          })) || []
+        );
+      await i.update({ embeds: [categoryEmbed] });
+    });
+
+    collector?.on("end", () => {
+      initialMessage.edit({ components: components(true) });
+    });
   },
 };

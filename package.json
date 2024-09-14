@@ -6,7 +6,8 @@
     "dev": "bun run --watch src/app.ts"
   },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "eslint": "^9.10.0"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"

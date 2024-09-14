@@ -1,27 +1,10 @@
-import type { AutocompleteInteraction, Client, Collection, CommandInteraction, Message, SlashCommandBuilder } from "discord.js";
+import { Client, Collection, CommandInteraction, Message, SlashCommandBuilder } from "discord.js";
 
 export interface Config {
-  client_id: string;
-  client_secret: string;
-  guild_id: string;
-  token: string;
   roles: {
     verificationId: string;
   };
-  SEARCH_DEFAULT: string[];
-}
-
-export interface Commands {
-  data: SlashCommandBuilder;
-  execute: ({ interaction, client }: PropsCommands) => Promise<void>;
-  autocomplete?: ({ interaction, client }: PropsAutocomplete) => void | Promise<void>;
-}
-
-export interface Events {
-  name: string;
-  rest?: boolean;
-  once?: boolean;
-  execute: ({ message, interaction, client }: PropsEvents) => void | Promise<void>;
+  // Add other configuration properties as needed
 }
 
 export interface CustomClient extends Client {
@@ -29,23 +12,28 @@ export interface CustomClient extends Client {
   config: Config;
 }
 
-export interface CustomCommandInteraction extends Omit<CommandInteraction, "client"> {
+export interface CustomCommandInteraction extends Omit<CommandInteraction, "client" | "command"> {
   client: CustomClient;
-  autocomplete?: ({ interaction, client }: PropsAutocomplete) => void | Promise<void>;
+  folder: string;
+  data: SlashCommandBuilder;
+  execute: (interaction: CustomCommandInteraction, client: CustomClient) => void | Promise<void>;
 }
 
-export interface PropsCommands {
-  interaction: CustomCommandInteraction;
-  client: CustomClient;
+export interface Commands {
+  data: SlashCommandBuilder;
+  execute: (interaction: CustomCommandInteraction, client: CustomClient) => void | Promise<void>;
+  autocomplete?: (interaction: CustomCommandInteraction, client: CustomClient) => void | Promise<void>;
 }
 
-export interface PropsAutocomplete {
-  interaction: AutocompleteInteraction;
-  client: CustomClient;
+export interface EventContext {
+  message?: Message;
+  interaction?: CustomCommandInteraction;
+  // Add more properties as needed
 }
 
-export interface PropsEvents {
-  message: Message;
-  interaction: CustomCommandInteraction | AutocompleteInteraction;
-  client: CustomClient;
+export interface Events {
+  name: string;
+  once?: boolean;
+  rest?: boolean;
+  execute: (client: CustomClient, c: EventContext) => void | Promise<void>;
 }

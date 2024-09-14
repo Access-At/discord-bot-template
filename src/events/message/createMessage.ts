@@ -2,22 +2,21 @@ import type { Events } from "@/util/type";
 
 export const event: Events = {
   name: "messageCreate",
-  execute: async ({ message }) => {
-    if (!message.guild || message.author.bot) return;
+  execute: async (_, c) => {
+    if (!c.message?.guild || c.message.author.bot) return;
 
     // Anti swearing system
     let words = ["anjing", "bangsat"];
     let foundInText = false;
 
     for (let i in words) {
-      if (message.content.toLowerCase().includes(words[i].toLowerCase())) foundInText = true;
+      if (c.message.content.toLowerCase().includes(words[i].toLowerCase())) foundInText = true;
     }
 
     if (foundInText) {
-      await message.delete();
-      console.log(message.channel);
-      if ("send" in message.channel) {
-        await message.channel.send({ content: "Please do not use bad words in this server." });
+      await c.message.delete();
+      if ("send" in c.message.channel) {
+        await c.message.channel.send({ content: "Please do not use bad words in this server." });
       }
     }
 

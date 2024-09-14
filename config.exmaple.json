@@ -1,7 +1,4 @@
 {
-  "client_id": "your client id",
-  "guild_id": "your guild id",
-  "token": "your token",
   "roles": {
     "verificationId": "id role for verification"
   },

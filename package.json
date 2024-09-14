@@ -1,0 +1,21 @@
+{
+  "name": "liebebotnew",
+  "module": "index.ts",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --watch src/app.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "discord.js": "^14.16.2",
+    "log-discord": "^1.1.5",
+    "pino": "^9.4.0",
+    "pino-pretty": "^11.2.2",
+    "table": "^6.8.2"
+  }
+}
